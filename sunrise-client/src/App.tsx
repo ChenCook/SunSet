@@ -15,6 +15,8 @@ function App() {
   const [endDate, setEndDate] = useState('');
   const [data, setData] = useState<SunEvent[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const entriesPerPage = 6;
 
   const fetchData = async () => {
     try {
@@ -38,6 +40,7 @@ function App() {
       }
 
       setData(normalizedData);
+      setCurrentPage(1); // Reset to first page on new data fetch
     } catch (error: any) {
       console.error('Error fetching data:', error);
       if (error.response && error.response.data && error.response.data.error) {
@@ -73,6 +76,19 @@ function App() {
 
     setChartData(processedData);
   }, [data]);
+
+  const totalPages = Math.ceil(data.length / entriesPerPage);
+  const indexOfLastEntry = currentPage * entriesPerPage;
+  const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
+  const currentEntries = data.slice(indexOfFirstEntry, indexOfLastEntry);
+
+  const handlePrevPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  };
 
   return (
     <div className="container">
@@ -110,7 +126,7 @@ function App() {
               </tr>
             </thead>
             <tbody>
-              {data.map((event, index) => (
+              {currentEntries.map((event, index) => (
                 <tr key={event.date + index}>
                   <td>{event.date}</td>
                   <td>{event.sunrise}</td>
@@ -120,6 +136,12 @@ function App() {
               ))}
             </tbody>
           </table>
+
+          <div className="pagination">
+            <button onClick={handlePrevPage} disabled={currentPage === 1}>Previous</button>
+            <span>Page {currentPage} of {totalPages}</span>
+            <button onClick={handleNextPage} disabled={currentPage === totalPages}>Next</button>
+          </div>
 
           <h2>☀️ Sunlight Duration (Minutes)</h2>
           <div className="chart-container">
@@ -144,7 +166,7 @@ function App() {
           padding: 20px;
           font-family: Arial, sans-serif;
           text-align: center;
-          background-color: #d0fce3; /* Mint background */
+          background-color: #d0fce3;
           box-shadow: 0 0 10px rgba(0,0,0,0.1);
           border-radius: 8px;
         }
@@ -185,6 +207,23 @@ function App() {
         }
         table th {
           background-color: #f2f2f2;
+        }
+        .pagination {
+          margin: 15px 0;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 10px;
+        }
+        .pagination button {
+          padding: 6px 12px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+        .pagination button:disabled {
+          background-color: #eee;
+          cursor: not-allowed;
         }
         .chart-container {
           width: 100%;
