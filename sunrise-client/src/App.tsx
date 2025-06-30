@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface SunEvent {
   date: string;
@@ -17,38 +17,36 @@ function App() {
   const [chartData, setChartData] = useState<any[]>([]);
 
   const fetchData = async () => {
-  try {
-    const response = await axios.get('http://localhost:3001/sunrise', {
-      params: { location, date_start: startDate, date_end: endDate }
-    });
+    try {
+      const response = await axios.get('http://localhost:3001/sunrise', {
+        params: { location, date_start: startDate, date_end: endDate }
+      });
 
-    let normalizedData: SunEvent[] = [];
+      let normalizedData: SunEvent[] = [];
 
-    if (Array.isArray(response.data)) {
-      if (Array.isArray(response.data[0])) {
-        normalizedData = response.data[0];
+      if (Array.isArray(response.data)) {
+        if (Array.isArray(response.data[0])) {
+          normalizedData = response.data[0];
+        } else {
+          normalizedData = response.data.map((item: any) => ({
+            date: item.date,
+            sunrise: item.sunrise,
+            sunset: item.sunset,
+            golden_hour: item.golden_hour
+          }));
+        }
+      }
+
+      setData(normalizedData);
+    } catch (error: any) {
+      console.error('Error fetching data:', error);
+      if (error.response && error.response.data && error.response.data.error) {
+        alert(`Error: ${error.response.data.error}`);
       } else {
-        normalizedData = response.data.map((item: any) => ({
-          date: item.date,
-          sunrise: item.sunrise,
-          sunset: item.sunset,
-          golden_hour: item.golden_hour
-        }));
+        alert('Error fetching data');
       }
     }
-
-    setData(normalizedData);
-  } catch (error: any) {
-    console.error('Error fetching data:', error);
-
-    // Show backend error if available
-    if (error.response && error.response.data && error.response.data.error) {
-      alert(`Error: ${error.response.data.error}`);
-    } else {
-      alert('Error fetching data');
-    }
-  }
-};
+  };
 
   const timeStringToMinutes = (timeStr: string): number => {
     if (!timeStr) return 0;
@@ -125,65 +123,83 @@ function App() {
 
           <h2>☀️ Sunlight Duration (Minutes)</h2>
           <div className="chart-container">
-            <LineChart width={600} height={300} data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis label={{ value: 'Minutes', angle: -90, position: 'insideLeft' }} />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="sunMinutes" stroke="#8884d8" name="Sunlight Minutes" />
-            </LineChart>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis label={{ value: 'Minutes', angle: -90, position: 'insideLeft' }} />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="sunMinutes" stroke="#8884d8" name="Sunlight Minutes" />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </>
       )}
 
       <style>{`
-  .container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-    font-family: Arial, sans-serif;
-    text-align: center;
-  }
-  h1 {
-    color: #333;
-  }
-  .form {
-    margin-bottom: 20px;
-  }
-  .form input, .form button {
-    padding: 8px 12px;
-    margin: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-  .form button {
-    background-color: #4CAF50;
-    color: white;
-    cursor: pointer;
-  }
-  .form button:hover {
-    background-color: #45a049;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-  }
-  table th, table td {
-    border: 1px solid #ddd;
-    padding: 8px;
-  }
-  table th {
-    background-color: #f2f2f2;
-  }
-  .chart-container {
-    display: flex;
-    justify-content: center;
-    margin-top: 20px;
-  }
-`}</style>
-
+        .container {
+          max-width: 800px;
+          margin: 20px auto;
+          padding: 20px;
+          font-family: Arial, sans-serif;
+          text-align: center;
+          background-color: #d0fce3; /* Mint background */
+          box-shadow: 0 0 10px rgba(0,0,0,0.1);
+          border-radius: 8px;
+        }
+        h1 {
+          color: #333;
+        }
+        .form {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          margin-bottom: 20px;
+          gap: 10px;
+        }
+        .form input, .form button {
+          padding: 8px 12px;
+          margin: 5px 0;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          flex: 1 1 150px;
+        }
+        .form button {
+          background-color: #4CAF50;
+          color: white;
+          cursor: pointer;
+        }
+        .form button:hover {
+          background-color: #45a049;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 15px;
+          font-size: 14px;
+        }
+        table th, table td {
+          border: 1px solid #ddd;
+          padding: 8px;
+        }
+        table th {
+          background-color: #f2f2f2;
+        }
+        .chart-container {
+          width: 100%;
+          height: 300px;
+          margin-top: 20px;
+        }
+        @media (max-width: 600px) {
+          .container {
+            padding: 15px;
+          }
+          table, th, td {
+            font-size: 12px;
+          }
+        }
+      `}</style>
     </div>
   );
 }
