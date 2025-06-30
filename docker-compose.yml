@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./sunrise-server
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"       
+    environment:
+     - RAILS_ENV=development
+    command: bundle exec rails s -b 0.0.0.0 -p 3001
+    
+
+  frontend:
+    build:
+      context: ./sunrise-client  
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"         
+    environment:
+      - REACT_APP_API_URL=http://localhost:3001
